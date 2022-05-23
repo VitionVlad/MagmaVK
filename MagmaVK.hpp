@@ -74,6 +74,7 @@ class MagmaVK{
     VkImageView depthImageView;
     string fshaderpath = "Engine/raw/surfacefrag.spv";
     string vshaderpath = "Engine/raw/surfacevert.spv";
+    float fov = 110;
     void CreateInstance(){
         VkApplicationInfo appinfo;
         appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -641,7 +642,7 @@ class MagmaVK{
         }
         vkResetCommandBuffer(commandBuffers[currentFrame], 0);
         recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
-        updateUniformBuffer(110, currentFrame);
+        updateUniformBuffer(fov, currentFrame);
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
