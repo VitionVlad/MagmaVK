@@ -76,6 +76,7 @@ class MagmaVK{
     string vshaderpath = "Engine/raw/surfacevert.spv";
     float fov = 110;
     int totalv = 3;
+    vec3 clearcol = vec3(0, 0, 0);
     void CreateInstance(){
         VkApplicationInfo appinfo;
         appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -589,7 +590,7 @@ class MagmaVK{
         renderPassInfo.renderArea.extent.height = resolution.y;
         renderPassInfo.renderArea.extent.width = resolution.x;
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[0].color = {{clearcol.x, clearcol.y, clearcol.z, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
