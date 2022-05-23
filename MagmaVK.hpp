@@ -75,6 +75,7 @@ class MagmaVK{
     string fshaderpath = "Engine/raw/surfacefrag.spv";
     string vshaderpath = "Engine/raw/surfacevert.spv";
     float fov = 110;
+    int totalv = 3;
     void CreateInstance(){
         VkApplicationInfo appinfo;
         appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -598,7 +599,7 @@ class MagmaVK{
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        vkCmdDraw(commandBuffer, totalv, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
         vkEndCommandBuffer(commandBuffer);
     }
