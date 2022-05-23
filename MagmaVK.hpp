@@ -4,6 +4,8 @@
 
 #include <array>
 
+#include <string>
+
 #define GLFW_INCLUDE_VULKAN
 
 #include <GLFW/glfw3.h>
@@ -70,6 +72,8 @@ class MagmaVK{
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
+    string fshaderpath = "Engine/raw/surfacefrag.spv";
+    string vshaderpath = "Engine/raw/surfacevert.spv";
     void CreateInstance(){
         VkApplicationInfo appinfo;
         appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -196,8 +200,8 @@ class MagmaVK{
         return shaderm;
     }
     void CreatePipeline(bool dbginfo){
-       auto vertShaderCode = loadbin("Engine/raw/surfacevert.spv");
-        auto fragShaderCode = loadbin("Engine/raw/surfacefrag.spv");
+       auto vertShaderCode = loadbin(vshaderpath);
+        auto fragShaderCode = loadbin(fshaderpath);
         VkShaderModule vertShaderModule = shadermodule(vertShaderCode);
         VkShaderModule fragShaderModule = shadermodule(fragShaderCode);
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
