@@ -56,7 +56,7 @@ class MagmaVK{
     mat4 MVP;
     const int prerenderframes = 2;
     uint32_t currentFrame = 0;
-    const vec3 vertexpos[3] = {
+    vec3 vertexpos[9999999] = {
         vec3(0.0, -0.5, 0),
         vec3(0.5, 0.5, 0),
         vec3(-0.5, 0.5, 0)
