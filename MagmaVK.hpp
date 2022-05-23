@@ -602,6 +602,18 @@ class MagmaVK{
         vkCmdEndRenderPass(commandBuffer);
         vkEndCommandBuffer(commandBuffer);
     }
+    void cleanupSwapChain() {
+        for (auto framebuffer : swapChainFramebuffers) {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+        vkDestroyPipeline(device, pipeline, nullptr);
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        vkDestroyRenderPass(device, renderPass, nullptr);
+        for (auto imageView : swapChainImageViews) {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
+    }
     void Renewswap(){
         vkDeviceWaitIdle(device);
         CreateSwapChain(0);
