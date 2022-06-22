@@ -56,10 +56,10 @@ class MagmaVK{
     mat4 MVP;
     const int prerenderframes = 2;
     uint32_t currentFrame = 0;
-    vec3 vertexpos[9999999] = {
-        vec3(0.0, -0.5, 0),
-        vec3(0.5, 0.5, 0),
-        vec3(-0.5, 0.5, 0)
+    vec4 vertexpos[9999999] = {
+        vec4(0.0, -0.5, 0, 1),
+        vec4(0.5, 0.5, 0, 1),
+        vec4(-0.5, 0.5, 0, 1)
     };
     VkBuffer vertexBuffer;
     VkVertexInputBindingDescription bindingDescription{};
@@ -415,11 +415,11 @@ class MagmaVK{
     }
     void CreateVertexInput(){
         bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(vec3);
+        bindingDescription.stride = sizeof(vec4);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         attrdesc.binding = 0;
         attrdesc.location = 0;
-        attrdesc.format = VK_FORMAT_R32G32B32_SFLOAT;
+        attrdesc.format = VK_FORMAT_R32G32B32A32_SFLOAT;
         attrdesc.offset = 0;
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
