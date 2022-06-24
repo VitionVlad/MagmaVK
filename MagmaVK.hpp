@@ -449,6 +449,12 @@ class MagmaVK{
         memcpy(data, vertexpos, (size_t) bufferInfo.size);
         vkUnmapMemory(device, vertexBufferMemory);
     }
+    void updateVertexBuffer(){
+        void* data;
+        vkMapMemory(device, vertexBufferMemory, 0, totalv*16, 0, &data);
+        memcpy(data, vertexpos, (size_t) totalv*16);
+        vkUnmapMemory(device, vertexBufferMemory);
+    }
     void createDescriptorSetLayout() {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
@@ -657,6 +663,7 @@ class MagmaVK{
         vkResetCommandBuffer(commandBuffers[currentFrame], 0);
         recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
         updateUniformBuffer(fov, currentFrame);
+        updateVertexBuffer();
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
