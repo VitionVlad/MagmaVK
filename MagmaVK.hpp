@@ -623,6 +623,7 @@ class MagmaVK{
         vkDestroySwapchainKHR(device, swapchain, nullptr);
     }
     void Renewswap(){
+        cleanupSwapChain();
         vkDeviceWaitIdle(device);
         CreateSwapChain(0);
         CreateImageViews(0);
@@ -631,7 +632,6 @@ class MagmaVK{
         CreatePipeline(0);
         CreateDepthRes();
         CreateFramebuffer(0);
-        CreateVertexInput();
         createUniformBuffers();
         CreateDescriptoPool();
         createDescriptorSets();
