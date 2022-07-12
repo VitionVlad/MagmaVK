@@ -10,6 +10,8 @@
 
 #include <GLFW/glfw3.h>
 
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+
 #include <glm/glm.hpp>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -21,6 +23,15 @@
 using namespace std;
 
 using namespace glm;
+
+struct uniformbuf{
+    mat4 mvp;
+    vec4 v1;
+    vec4 v2;
+    vec4 v3;
+    vec4 v4;
+    vec4 v5;
+};
 
 class MagmaVK{
     public:
@@ -54,6 +65,7 @@ class MagmaVK{
     mat4 proj;
     mat4 view;
     mat4 MVP;
+    uniformbuf ubo;
     const int prerenderframes = 2;
     uint32_t currentFrame = 0;
     vec4 vertexpos[9999999] = {
@@ -460,7 +472,7 @@ class MagmaVK{
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.descriptorCount = 1;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = 1;
@@ -499,7 +511,7 @@ class MagmaVK{
         vkBindBufferMemory(device, buffer, bufferMemory, 0);
     }
     void createUniformBuffers() {
-        VkDeviceSize bufferSize = sizeof(MVP);
+        VkDeviceSize bufferSize = sizeof(uniformbuf);
 
         uniformBuffers.resize(prerenderframes);
         uniformBuffersMemory.resize(prerenderframes);
@@ -534,7 +546,7 @@ class MagmaVK{
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uniformBuffers[i];
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(MVP);
+            bufferInfo.range = sizeof(ubo);
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrite.dstSet = descriptorSets[i];
@@ -642,12 +654,13 @@ class MagmaVK{
         view = rotate(view, rot.x, vec3(0, 1, 0));
         view = translate(view, pos);
         MVP = proj * view * mat4(1.0f);
+        ubo.mvp = MVP;
     }
     void updateUniformBuffer(float fov, uint32_t currentImage) {
         calculatematrix(fov);
         void* data;
-        vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(MVP), 0, &data);
-        memcpy(data, &MVP, sizeof(MVP));
+        vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
+        memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
     }
     void Draw(){
