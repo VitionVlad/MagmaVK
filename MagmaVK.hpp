@@ -26,11 +26,42 @@ using namespace glm;
 
 struct uniformbuf{
     mat4 mvp;
-    vec4 v1;
-    vec4 v2;
-    vec4 v3;
-    vec4 v4;
-    vec4 v5;
+    vec4 massive[100];
+};
+
+struct vertexbuf{
+    vec4 vertexpos;
+    ivec3 vertexcol;
+    vec3 normals;
+    vec2 uv;
+
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(vertexbuf);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        return bindingDescription;
+    }
+    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(vertexbuf, vertexpos);
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SINT;
+        attributeDescriptions[1].offset = offsetof(vertexbuf, vertexcol);
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(vertexbuf, normals);
+        attributeDescriptions[3].binding = 0;
+        attributeDescriptions[3].location = 3;
+        attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[3].offset = offsetof(vertexbuf, uv);
+        return attributeDescriptions;
+    }
 };
 
 class MagmaVK{
@@ -68,14 +99,8 @@ class MagmaVK{
     uniformbuf ubo;
     const int prerenderframes = 2;
     uint32_t currentFrame = 0;
-    vec4 vertexpos[9999999] = {
-        vec4(0.0, -0.5, 0, 1),
-        vec4(0.5, 0.5, 0, 1),
-        vec4(-0.5, 0.5, 0, 1)
-    };
+    vertexbuf vertex[9999999];
     VkBuffer vertexBuffer;
-    VkVertexInputBindingDescription bindingDescription{};
-    VkVertexInputAttributeDescription attrdesc;
     VkDeviceMemory vertexBufferMemory;
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -239,10 +264,12 @@ class MagmaVK{
         fragShaderStageInfo.pName = "main";
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+        auto bindingDescription = vertexbuf::getBindingDescription();
+        auto attributeDescriptions = vertexbuf::getAttributeDescriptions();
         vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-        vertexInputInfo.pVertexAttributeDescriptions = &attrdesc;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -437,16 +464,9 @@ class MagmaVK{
         depthImageView = createImageView(depthImage, VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT);
     }
     void CreateVertexInput(){
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(vec4);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        attrdesc.binding = 0;
-        attrdesc.location = 0;
-        attrdesc.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        attrdesc.offset = 0;
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(vertexpos);
+        bufferInfo.size = sizeof(vertex);
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer);
@@ -469,13 +489,13 @@ class MagmaVK{
         vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
         void* data;
         vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-        memcpy(data, vertexpos, (size_t) bufferInfo.size);
+        memcpy(data, vertex, (size_t) bufferInfo.size);
         vkUnmapMemory(device, vertexBufferMemory);
     }
     void updateVertexBuffer(){
         void* data;
-        vkMapMemory(device, vertexBufferMemory, 0, totalv*16, 0, &data);
-        memcpy(data, vertexpos, (size_t) totalv*16);
+        vkMapMemory(device, vertexBufferMemory, 0, totalv*64, 0, &data);
+        memcpy(data, vertex, (size_t) totalv*64);
         vkUnmapMemory(device, vertexBufferMemory);
     }
     void createDescriptorSetLayout() {
