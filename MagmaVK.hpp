@@ -875,6 +875,20 @@ class MagmaVK{
         createTextureImageView();
         createTextureSampler();
     }
+    void useTexture(ivec2 tResolution, unsigned char* tPixels){
+        VkDeviceSize imgsize = tResolution.x * tResolution.y * 4;
+        createBuffer(imgsize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, imgsize, 0, &data);
+        memcpy(data, tPixels, static_cast<size_t>(imgsize));
+        vkUnmapMemory(device, stagingBufferMemory);
+        createImage(tResolution.x, tResolution.y, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(tResolution.x), static_cast<uint32_t>(tResolution.y));
+        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        createTextureImageView();
+        createTextureSampler();
+    }
     void Init(){
         CreateInstance();
         glfwCreateWindowSurface(instance, window, nullptr, &Surface);
