@@ -27,6 +27,7 @@ using namespace glm;
 struct uniformbuf{
     mat4 mvp;
     vec4 massive[100];
+    vec3 pPos;
 };
 
 struct vertexbuf{
@@ -121,7 +122,14 @@ class MagmaVK{
     float fov = 110;
     int totalv = 3;
     vec3 clearcol = vec3(0, 0, 0);
-    string basetex = "App/Models/image.ppm";
+    string TexToLoad[2] = {
+        "App/Models/image.ppm",
+        "App/Models/SpecularMap.ppm"
+    };
+    int TexToLoadCnt = 2;
+    int totaltex;
+    ivec2 tResolution;
+    bool preloadtextures = true;
     void CreateInstance(){
         VkApplicationInfo appinfo;
         appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -415,7 +423,7 @@ class MagmaVK{
         imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
+        imageInfo.arrayLayers = 100;
         imageInfo.format = format;
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -452,7 +460,7 @@ class MagmaVK{
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = 100;
         VkImageView imageView;
         if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
@@ -709,6 +717,7 @@ class MagmaVK{
     }
     void updateUniformBuffer(float fov, uint32_t currentImage) {
         calculatematrix(fov);
+        ubo.pPos = pos;
         void* data;
         vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
@@ -826,7 +835,7 @@ class MagmaVK{
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
+        region.imageSubresource.layerCount = 100;
         region.imageOffset = {0, 0, 0};
         region.imageExtent = {width, height, 1};
         vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
@@ -859,28 +868,15 @@ class MagmaVK{
             throw std::runtime_error("failed to create texture sampler!");
         }
     }
-    void createTexture(string path){
-        ivec2 tResolution;
-        readImage(pixels, tResolution.x, tResolution.y, path.c_str());
-        VkDeviceSize imgsize = tResolution.x * tResolution.y * 4;
+    void createTexture(string *path, int cnt){
+        for(int i = 0; i!=cnt; i++){
+            readImage(pixels, tResolution.x, tResolution.y, path[i].c_str());
+        }
+        VkDeviceSize imgsize = tResolution.x * tResolution.y * 4 * 4;
         createBuffer(imgsize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imgsize, 0, &data);
         memcpy(data, pixels, static_cast<size_t>(imgsize));
-        vkUnmapMemory(device, stagingBufferMemory);
-        createImage(tResolution.x, tResolution.y, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(tResolution.x), static_cast<uint32_t>(tResolution.y));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        createTextureImageView();
-        createTextureSampler();
-    }
-    void useTexture(ivec2 tResolution, unsigned char* tPixels){
-        VkDeviceSize imgsize = tResolution.x * tResolution.y * 4;
-        createBuffer(imgsize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-        void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imgsize, 0, &data);
-        memcpy(data, tPixels, static_cast<size_t>(imgsize));
         vkUnmapMemory(device, stagingBufferMemory);
         createImage(tResolution.x, tResolution.y, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
         transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -907,7 +903,9 @@ class MagmaVK{
         CreateCommandBuffer();
         CreateDepthRes();
         CreateSync();
-        createTexture(basetex);
+        if(preloadtextures == true){
+            createTexture(TexToLoad, TexToLoadCnt);
+        }
         Renewswap();
     }
     void Destroy(){
